@@ -14,24 +14,26 @@ namespace IPcalculator
 {
     public partial class Form1 : Form
     {
-        int[] ip2;
-        int[] mask22;
-        string[] mask2;
+        int[,] ip2;
+        int[,] mask2;
 
         int[] ip;
         int mask;
 
         int test = 0b0;
-        string networkAddress;
+        //string networkAddress;
+        int[,] networkAddress2;
+        int[] networkAddress;
         string ipString = "192.168.100.1";
         public Form1()
         {
             InitializeComponent();
             FillcbMask();
             ip = new int[4];
-            ip2 = new int[32];
-            mask22 = new int[32];
-            mask2 = new string[4];
+            ip2 = new int[4, 8];
+            mask2 = new int[4, 8];
+            networkAddress2 = new int[4, 8];
+            networkAddress = new int[4];
 		}
 
         void FillcbMask()
@@ -43,50 +45,84 @@ namespace IPcalculator
             cbMask.SelectedItem = 24;
         }
 
+        void Print(int[,] array)
+        {
+            for(int i = 0;i < 4;i++)
+            {
+                for(int j = 0; j < 8;j++)
+                {
+                    labelIpInfo.Text += array[i, j].ToString();
+                }
+                labelIpInfo.Text += " ";
+            }
+                labelIpInfo.Text += "\n";
+        }
+
+        void Print(int[] array)
+        {
+            for (int i = 0; i < array.Length; i++)
+            {
+                labelIpInfo.Text += array[i].ToString();
+                if(i != array.Length - 1)labelIpInfo.Text += ".";
+            }
+            labelIpInfo.Text += "\n";
+        }
+
         void CalculateNetworkAddress()
         {
-			networkAddress = "";
 			for (int i = 0;i < 4;i++)
             {
-                networkAddress += (mask22[i] & ip2[i]).ToString();
+                for(int j = 0; j < 8; j++)
+                {
+                    networkAddress2[i, j] += (mask2[i, j] & ip2[i, j]);
+                }
 			}
+        }
+
+        void GetNumberDecimalFrom()
+        {
+            for(int i = 0; i < 4;i++) 
+            {
+                for(int j = 0; j < 8; j++)
+                {
+                    networkAddress[i] += (int)(networkAddress2[i, j] * Math.Pow(2, 7 - j));
+                }
+            }
         }
 
         void ConvertMaskToBinaryForm()
         {
             int mask10 = Convert.ToInt32(cbMask.SelectedItem.ToString());
 
-			for (int i = 0; i < 32; i++)
+			for (int i = 0; i < 4; i++)
             {
-                mask22[i] = mask10-- > 0 ? 1 : 0;
+                for(int j = 0; j < 8; j++)
+                {
+                    mask2[i, j] = mask10-- > 0 ? 1 : 0;
+                }
 			}
         }
 
         void ConvertIpToBinaryForm()
         {
-			string ipStringInput = "";
-
-            for(int i = 0 ; i < 4; i++)
-            {
-                ipStringInput += ConvertNumberToBin(ip[i]).ToString();
-			}
-			for (int i = 0; i < ipStringInput.Length; i++)
+			for (int i = 0; i < 4; i++)
 			{
-                ip2[i] = ipStringInput[i].Equals('1') ? 1 : 0;
+                for(int j = 0; j < 8; j++)
+                {
+                    ip2[i, j] = ConvertNumberToBin(ip[i])[j];
+                }
 			}
 		}
 
-		int ConvertNumberToBin(int n)
+		int[] ConvertNumberToBin(int value)
 		{
-			int res = 0;
-			int p = 1;
-			while (n > 0)
-			{
-				res += p * (n % 2);
-				n >>= 1;
-				p *= 10;
-			}
-			return res;
+            int[] result = new int[8];
+            for (int i = 0; i < 8; i++)
+            {
+                result[7 - i] = value % 2;
+                value /= 2;
+            }
+            return result;
 		}
 
         void ConvertIpToDecimalForm()
@@ -112,20 +148,13 @@ namespace IPcalculator
             ConvertMaskToBinaryForm();
 
 			CalculateNetworkAddress();
-            labelIpInfo.Text += ip2[0] + "\n";
-            for(int i = 0;i < ip2.Length;i++)
-            {
-				labelIpInfo.Text += ip2[i];
-                if ((i + 1) % 8 == 0) labelIpInfo.Text += " ";
-			}
-			labelIpInfo.Text += "\n";
-			for (int i = 0; i < mask22.Length; i++)
-			{
-				labelIpInfo.Text += mask22[i];
-				if ((i + 1) % 8 == 0) labelIpInfo.Text += " ";
-			}
-			labelIpInfo.Text += "\n";
-            labelIpInfo.Text += "network " +networkAddress;
+            Print(mask2);
+            Print(ip2);
+            Print(networkAddress2);
+            GetNumberDecimalFrom();
+            Print(networkAddress);
+			labelIpInfo.Text += networkAddress[0] +"\n";
+            labelIpInfo.Text += "network " +networkAddress2;
 
 		}
     }

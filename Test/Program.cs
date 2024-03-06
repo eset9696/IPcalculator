@@ -10,19 +10,22 @@ namespace Test
 	{
 		static void Main(string[] args)
 		{
-			int value = 0;
-			int p = 1;
-			int n = 8;
-			int counter = 0;
+			int value =;
+			int[] result = new int[8];
 			Console.WriteLine(value);
-			while (--n > 0)
+			for (int i = 0; i < 8; i++)
 			{
-				value += 1;
-				value <<= 1;
-				counter++;
+                result[7 - i] = value % 2;
+                value /= 2;
+            }
+			for (int i = 0;i < 8;i++)
+			{
+				Console.Write(result[i]);
+
 			}
-			Console.WriteLine(value);
-			Console.WriteLine(Convert.ToString(value, 2) + " " + counter);
+			
+			Console.WriteLine();
+			Console.WriteLine(result);
 		}
 	}
 }
