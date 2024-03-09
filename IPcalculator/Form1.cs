@@ -72,6 +72,7 @@ namespace IPcalculator
 		void CalculateHostsNumber()
 		{
             hosts = (long) Math.Pow(2, (32 - mask)) - 2;
+            if(hosts < 0) hosts = 0;
 		}
 
 		void CalculateNetworkAddress()
