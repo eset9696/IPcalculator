@@ -6,6 +6,7 @@ using System.Drawing;
 using System.Linq;
 using System.Net.NetworkInformation;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.Windows.Forms.VisualStyles;
@@ -16,32 +17,27 @@ namespace IPcalculator
     {
         int[,] ip2;
         int[,] mask2;
+		int[,] networkAddress2;
+        int[,] broadcast2;
 
         int[] ip;
+        int[] broadcast;
+        int[] networkAddress;
+
+        long hosts;
         int mask;
 
-        int test = 0b0;
-        //string networkAddress;
-        int[,] networkAddress2;
-        int[] networkAddress;
-        string ipString = "192.168.100.1";
+        string ipString;
+        string pattern = @"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$";
         public Form1()
         {
             InitializeComponent();
             FillcbMask();
-            ip = new int[4];
-            ip2 = new int[4, 8];
-            mask2 = new int[4, 8];
-            networkAddress2 = new int[4, 8];
-            networkAddress = new int[4];
 		}
 
         void FillcbMask()
         {
-            for (int i = 0; i < 32; i++)
-            {
-                cbMask.Items.Add(i + 1);
-            }
+            for (int i = 0; i <= 32; i++)cbMask.Items.Add(i);
             cbMask.SelectedItem = 24;
         }
 
@@ -68,50 +64,75 @@ namespace IPcalculator
             labelIpInfo.Text += "\n";
         }
 
-        void CalculateNetworkAddress()
+		void Print(long value)
+		{
+			labelIpInfo.Text += value + "\n";
+		}
+
+		void CalculateHostsNumber()
+		{
+            hosts = (long) Math.Pow(2, (32 - mask)) - 2;
+		}
+
+		void CalculateNetworkAddress()
         {
+			networkAddress2 = new int[4, 8];
+			networkAddress = new int[4];
 			for (int i = 0;i < 4;i++)
             {
-                for(int j = 0; j < 8; j++)
-                {
-                    networkAddress2[i, j] += (mask2[i, j] & ip2[i, j]);
-                }
+                for(int j = 0; j < 8; j++) networkAddress2[i, j] += (mask2[i, j] & ip2[i, j]);
 			}
-        }
+			GetNumberDecimalFrom(networkAddress, networkAddress2);
+		}
 
-        void GetNumberDecimalFrom()
+		void CalculateBroadcast()
+		{
+			broadcast2 = new int[4, 8];
+			broadcast = new int[4];
+			int counter = 0;
+			for (int i = 0; i < 4; i++)
+			{
+				for (int j = 0; j < 8; j++, counter++)
+				{
+                    if(counter < mask) broadcast2[i, j] = ip2[i, j];
+					else broadcast2[i, j] = 1;
+				}
+			}
+			GetNumberDecimalFrom(broadcast, broadcast2);
+		}
+
+		void GetNumberDecimalFrom(int[] array, int[,] array2)
         {
             for(int i = 0; i < 4;i++) 
             {
-                for(int j = 0; j < 8; j++)
-                {
-                    networkAddress[i] += (int)(networkAddress2[i, j] * Math.Pow(2, 7 - j));
-                }
+                for(int j = 0; j < 8; j++) array[i] += (int)(array2[i, j] * Math.Pow(2, 7 - j));
             }
         }
 
         void ConvertMaskToBinaryForm()
         {
-            int mask10 = Convert.ToInt32(cbMask.SelectedItem.ToString());
-
+            int temp = mask;
+			mask2 = new int[4, 8];
 			for (int i = 0; i < 4; i++)
             {
-                for(int j = 0; j < 8; j++)
-                {
-                    mask2[i, j] = mask10-- > 0 ? 1 : 0;
-                }
+                for(int j = 0; j < 8; j++) mask2[i, j] = temp-- > 0 ? 1 : 0;
 			}
         }
 
         void ConvertIpToBinaryForm()
         {
+			ip2 = new int[4, 8];
+			ConvertIpToDecimalForm();
 			for (int i = 0; i < 4; i++)
 			{
-                for(int j = 0; j < 8; j++)
-                {
-                    ip2[i, j] = ConvertNumberToBin(ip[i])[j];
-                }
+                for(int j = 0; j < 8; j++) ip2[i, j] = ConvertNumberToBin(ip[i])[j];
 			}
+		}
+		void ConvertIpToDecimalForm()
+		{
+			ip = new int[4];
+			string ipStringInput = ipString;
+			for (int i = 0; i < 4; i++) ip[i] = Convert.ToInt32(ipStringInput.Split('.')[i]);
 		}
 
 		int[] ConvertNumberToBin(int value)
@@ -125,37 +146,45 @@ namespace IPcalculator
             return result;
 		}
 
-        void ConvertIpToDecimalForm()
-        {
-            string ipStringInput = ipString; 
-            for(int i = 0; i < 4; i++)
-            {
-                ip[i] = Convert.ToInt32(ipStringInput.Split('.')[i]);
-            }
-        }
-
         void Calculate()
         {
+            ipString = rtbIPinput.Text.ToString();
+            if (Regex.IsMatch(ipString, pattern))
+            {
+				mask = Convert.ToInt32(cbMask.SelectedItem.ToString());
+				ConvertIpToBinaryForm();
+                ConvertMaskToBinaryForm();
+                CalculateNetworkAddress();
+                CalculateBroadcast();
+                CalculateHostsNumber();
+                ShowInfo();
+            }
+            else labelIpInfo.Text = "Неверный формат IP адреса";
+		}
 
-        }
+        void ShowInfo()
+        {
+            labelIpInfo.Text = "Network address:\t ";
+			Print(networkAddress); 
+            labelIpInfo.Text += "Broadcast address:\t ";
+			Print(broadcast);
+            labelIpInfo.Text += "Number of hosts:\t ";
+            Print(hosts);
+		}
 
         private void btnCalculate_Click(object sender, EventArgs e)
         {
-            ConvertIpToDecimalForm();
-            string output = ip[0].ToString() + "." + ip[1].ToString() + "." + ip[2].ToString() + "." + ip[3].ToString() + "\n";
-            labelIpInfo.Text = output;
-            ConvertIpToBinaryForm();
-            ConvertMaskToBinaryForm();
-
-			CalculateNetworkAddress();
-            Print(mask2);
-            Print(ip2);
-            Print(networkAddress2);
-            GetNumberDecimalFrom();
-            Print(networkAddress);
-			labelIpInfo.Text += networkAddress[0] +"\n";
-            labelIpInfo.Text += "network " +networkAddress2;
-
+            Calculate();
 		}
-    }
+
+		private void rtbIPinput_TextChanged(object sender, EventArgs e)
+		{
+            Calculate();
+		}
+
+		private void cbMask_SelectedIndexChanged(object sender, EventArgs e)
+		{
+			Calculate();
+		}
+	}
 }
