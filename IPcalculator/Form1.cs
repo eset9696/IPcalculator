@@ -152,14 +152,15 @@ namespace IPcalculator
             ipString = rtbIPinput.Text.ToString();
             if (Regex.IsMatch(ipString, pattern))
             {
-				mask = Convert.ToInt32(cbMask.SelectedItem.ToString());
-				ConvertIpToBinaryForm();
+                mask = Convert.ToInt32(cbMask.SelectedItem.ToString());
+                ConvertIpToBinaryForm();
                 ConvertMaskToBinaryForm();
                 CalculateNetworkAddress();
                 CalculateBroadcast();
                 CalculateHostsNumber();
                 ShowInfo();
             }
+            else if (ipString.Equals("")) labelIpInfo.Text = "Введите IP адрес";
             else labelIpInfo.Text = "Неверный формат IP адреса";
 		}
 
